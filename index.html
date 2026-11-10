@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f28c28"><title>Frausto Sistemas – Control de Caja</title>
+<style>
+:root{--orange:#f28c28;--green:#169b62;--ink:#18212b;--muted:#687481;--bg:#f5f7f8}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font:16px system-ui,-apple-system,sans-serif;color:var(--ink)}
+header{background:white;padding:20px 18px;border-bottom:1px solid #e6e9ec;position:sticky;top:0;z-index:2}
+.brand{font-weight:800;font-size:19px}.brand span{color:var(--orange)}.sub{font-size:12px;color:var(--muted);margin-top:3px}
+main{max-width:760px;margin:auto;padding:18px}.card{background:white;border:1px solid #e6e9ec;border-radius:17px;padding:17px;margin-bottom:14px;box-shadow:0 3px 12px #17212b08}
+.balance{font-size:12px;color:var(--muted);letter-spacing:.08em}.amount{font-size:32px;font-weight:800;margin:5px 0 12px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{background:#f7f8f9;border-radius:12px;padding:13px}.stat small{color:var(--muted)}.stat strong{display:block;font-size:20px;margin-top:5px}
+.green{color:var(--green)}.orange{color:var(--orange)}
+.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1}
+button{border:0;border-radius:12px;padding:13px 15px;font-weight:700;font-size:15px;cursor:pointer;background:var(--orange);color:white}
+button.secondary{background:var(--green)}button.light{background:#eef1f3;color:var(--ink)}button:disabled{opacity:.55}
+input,select{width:100%;padding:12px;border:1px solid #d8dee3;border-radius:10px;font:inherit;background:white;margin:5px 0 12px}
+label{font-size:13px;font-weight:650;color:#43505c}h2{font-size:17px;margin:0 0 13px}.hidden{display:none!important}
+.item{padding:12px 0;border-bottom:1px solid #edf0f2;display:flex;justify-content:space-between;gap:12px}.item:last-child{border:0}
+.item small{display:block;color:var(--muted);margin-top:3px}.notice{font-size:13px;color:var(--muted);line-height:1.45}
+#message{padding:10px;border-radius:10px;background:#fff3e5;color:#75420e;margin-bottom:12px;display:none}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:20px}
+</style>
+</head>
+<body>
+<header><div class="brand">FRAUSTO <span>SISTEMAS</span></div><div class="sub">Control de Caja · Ingresos y egresos</div></header>
+<main>
+<div id="message"></div>
+<section id="login" class="card">
+<h2>Iniciar sesión</h2>
+<label>Correo electrónico</label><input id="email" type="email" autocomplete="username" placeholder="tu correo">
+<label>Contraseña</label><input id="password" type="password" autocomplete="current-password" placeholder="Tu contraseña">
+<button id="loginBtn" style="width:100%">Entrar</button>
+<p class="notice">Acceso privado para el administrador y el empleado de Frausto Sistemas.</p>
+</section>
+<section id="app" class="hidden">
+<div class="card">
+<div class="balance">SALDO NETO DEL PERÍODO</div><div class="amount" id="balance">$0.00</div>
+<div class="stats">
+<div class="stat"><small>Ingresos</small><strong class="green" id="income">$0.00</strong></div>
+<div class="stat"><small>Gastos</small><strong class="orange" id="expenses">$0.00</strong></div>
+</div>
+<p class="notice" id="period"></p>
+</div>
+<div class="card">
+<h2>Registrar movimiento</h2>
+<div class="row"><div><label>Tipo</label><select id="type"><option value="ingreso">Ingreso</option><option value="gasto">Gasto</option></select></div><div><label>Monto (MXN)</label><input id="amount" type="number" min="0.01" step="0.01" placeholder="0.00"></div></div>
+<label>Categoría</label><select id="category"></select>
+<label>Descripción</label><input id="description" maxlength="180" placeholder="Ej. Reparación de pantalla">
+<label>Forma de pago</label><select id="payment"><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option><option value="otro">Otro</option></select>
+<button id="saveBtn" style="width:100%">Guardar movimiento</button>
+</div>
+<div class="card">
+<div class="row" style="align-items:center"><h2 style="margin:0">Movimientos recientes</h2><button class="light" id="refreshBtn">Actualizar</button></div>
+<div id="history" class="notice" style="margin-top:10px">Cargando…</div>
+</div>
+<div class="row"><button class="light" id="logoutBtn">Cerrar sesión</button></div>
+</section>
+</main><footer>Frausto Sistemas · Control interno de caja</footer>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+const SUPABASE_URL='https://sslgmtklgmountnlqrhw.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_5_Jn4e4IhVdqicHA3SpqTg_S_RfRuIL';
+const db=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+const $=id=>document.getElementById(id);
+const money=n=>new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN'}).format(Number(n||0));
+const incomeCats=['Reparación','Venta de equipos','Accesorios','Liberación y desbloqueo','Otros ingresos'];
+const expenseCats=['Refacciones','Compra de equipos','Accesorios para venta','Renta y servicios','Otros gastos'];
+function msg(t){$('message').textContent=t;$('message').style.display='block'}
+function clearMsg(){$('message').style.display='none'}
+function setCategories(){const a=$('type').value==='ingreso'?incomeCats:expenseCats;$('category').innerHTML=a.map(x=>`<option>${x}</option>`).join('')}
+$('type').addEventListener('change',setCategories);setCategories();
+async function sessionUI(){const {data:{session}}=await db.auth.getSession();$('login').classList.toggle('hidden',!!session);$('app').classList.toggle('hidden',!session);if(session){clearMsg();await loadData()}}
+$('loginBtn').onclick=async()=>{clearMsg();const {error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)msg(error.message);else await sessionUI()};
+$('logoutBtn').onclick=async()=>{await db.auth.signOut();await sessionUI()};
+$('saveBtn').onclick=async()=>{clearMsg();const amount=Number($('amount').value);if(!(amount>0)){msg('Escribe un monto mayor que cero.');return}
+$('saveBtn').disabled=true;
+const {data:{user}}=await db.auth.getUser();
+const {error}=await db.from('fs_movements').insert({type:$('type').value,amount,category:$('category').value,description:$('description').value.trim(),payment_method:$('payment').value,created_by:user.id});
+$('saveBtn').disabled=false;if(error){msg('No se pudo guardar: '+error.message);return}
+$('amount').value='';$('description').value='';await loadData();msg('Movimiento guardado correctamente.');};
+$('refreshBtn').onclick=loadData;
+async function loadData(){const {data,error}=await db.from('fs_movements').select('id,type,amount,category,description,payment_method,created_at').order('created_at',{ascending:false}).limit(200);
+if(error){msg('No se pudieron cargar los movimientos: '+error.message);return}
+const rows=data||[];const inc=rows.filter(x=>x.type==='ingreso').reduce((s,x)=>s+Number(x.amount),0);const exp=rows.filter(x=>x.type==='gasto').reduce((s,x)=>s+Number(x.amount),0);
+$('income').textContent=money(inc);$('expenses').textContent=money(exp);$('balance').textContent=money(inc-exp);$('period').textContent='Resumen de los últimos 200 movimientos cargados.';
+$('history').innerHTML=rows.length?rows.map(x=>`<div class="item"><div><b>${x.type==='ingreso'?'Ingreso':'Gasto'} · ${escapeHtml(x.category)}</b><small>${escapeHtml(x.description||'Sin descripción')} · ${new Date(x.created_at).toLocaleString('es-MX')}</small></div><strong class="${x.type==='ingreso'?'green':'orange'}">${x.type==='ingreso'?'+':'−'}${money(x.amount)}</strong></div>`).join(''):'Todavía no hay movimientos registrados.'}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+db.auth.onAuthStateChange(()=>setTimeout(sessionUI,0));sessionUI();
+</script>
+</body></html>
