@@ -1,92 +1,569 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#f28c28"><title>Frausto Sistemas – Control de Caja</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f28c28">
+<title>Frausto Sistemas | Recepción de Equipos</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--orange:#f28c28;--green:#169b62;--ink:#18212b;--muted:#687481;--bg:#f5f7f8}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);font:16px system-ui,-apple-system,sans-serif;color:var(--ink)}
-header{background:white;padding:20px 18px;border-bottom:1px solid #e6e9ec;position:sticky;top:0;z-index:2}
-.brand{font-weight:800;font-size:19px}.brand span{color:var(--orange)}.sub{font-size:12px;color:var(--muted);margin-top:3px}
-main{max-width:760px;margin:auto;padding:18px}.card{background:white;border:1px solid #e6e9ec;border-radius:17px;padding:17px;margin-bottom:14px;box-shadow:0 3px 12px #17212b08}
-.balance{font-size:12px;color:var(--muted);letter-spacing:.08em}.amount{font-size:32px;font-weight:800;margin:5px 0 12px}
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{background:#f7f8f9;border-radius:12px;padding:13px}.stat small{color:var(--muted)}.stat strong{display:block;font-size:20px;margin-top:5px}
-.green{color:var(--green)}.orange{color:var(--orange)}
-.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1}
-button{border:0;border-radius:12px;padding:13px 15px;font-weight:700;font-size:15px;cursor:pointer;background:var(--orange);color:white}
-button.secondary{background:var(--green)}button.light{background:#eef1f3;color:var(--ink)}button:disabled{opacity:.55}
-input,select{width:100%;padding:12px;border:1px solid #d8dee3;border-radius:10px;font:inherit;background:white;margin:5px 0 12px}
-label{font-size:13px;font-weight:650;color:#43505c}h2{font-size:17px;margin:0 0 13px}.hidden{display:none!important}
-.item{padding:12px 0;border-bottom:1px solid #edf0f2;display:flex;justify-content:space-between;gap:12px}.item:last-child{border:0}
-.item small{display:block;color:var(--muted);margin-top:3px}.notice{font-size:13px;color:var(--muted);line-height:1.45}
-#message{padding:10px;border-radius:10px;background:#fff3e5;color:#75420e;margin-bottom:12px;display:none}
-footer{text-align:center;color:var(--muted);font-size:12px;padding:20px}
+:root {
+  --orange:#f28c28;
+  --dark:#18212b;
+  --muted:#718096;
+  --bg:#f4f6f9;
+  --white:#fff;
+  --green:#159b63;
+  --red:#d94b4b;
+  --border:#e5eaf0;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--dark);
+  font-family:Arial,Helvetica,sans-serif;
+}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+header{
+  background:#fff;border-bottom:1px solid var(--border);
+  padding:15px 5%;display:flex;align-items:center;
+  justify-content:space-between;gap:15px;
+}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{
+  width:46px;height:46px;border-radius:13px;
+  background:linear-gradient(135deg,#ffb45f,#ed7d18);
+  display:grid;place-items:center;color:white;
+  font-weight:900;font-size:20px;
+}
+.brand h1{font-size:19px;margin:0}
+.brand small{color:var(--muted)}
+.container{max-width:1200px;margin:25px auto;padding:0 18px}
+.panel{
+  background:white;border:1px solid var(--border);
+  border-radius:15px;padding:20px;margin-bottom:20px;
+  box-shadow:0 4px 15px #18212b08;
+}
+h2{font-size:19px;margin:0 0 17px}
+h3{font-size:15px;margin:0 0 12px}
+label{
+  display:block;font-size:12px;font-weight:bold;
+  color:#526071;margin-bottom:6px;
+}
+input,select,textarea{
+  width:100%;padding:12px;border:1px solid #dce2e9;
+  border-radius:9px;background:white;outline:none;
+}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--orange);
+  box-shadow:0 0 0 3px #f28c2820;
+}
+textarea{min-height:85px;resize:vertical}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.field{min-width:0}
+.full{grid-column:1/-1}
+.btn{
+  border:0;border-radius:9px;padding:12px 17px;
+  font-weight:bold;background:var(--orange);color:white;
+}
+.btn:hover{filter:brightness(.96)}
+.btn.secondary{background:#edf1f5;color:#263444}
+.btn.danger{background:var(--red)}
+.btn.green{background:var(--green)}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:15px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stat{
+  background:#fff;border:1px solid var(--border);
+  border-radius:13px;padding:16px;
+}
+.stat strong{display:block;font-size:25px;color:var(--orange)}
+.stat span{font-size:12px;color:var(--muted)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.tab{
+  background:#fff;border:1px solid var(--border);
+  border-radius:9px;padding:11px 15px;font-weight:bold;
+}
+.tab.active{background:var(--orange);color:white;border-color:var(--orange)}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:650px}
+th,td{text-align:left;padding:12px;border-bottom:1px solid var(--border);font-size:13px}
+th{background:#f7f8fa;color:#526071}
+tr:hover td{background:#fffaf5}
+.status{
+  display:inline-block;padding:5px 9px;border-radius:20px;
+  background:#fff0df;color:#a65b0c;font-size:11px;font-weight:bold;
+}
+.notice{padding:12px;border-radius:9px;background:#fff5e9;color:#88500e;font-size:13px;margin-bottom:15px}
+#message{margin:12px 0;font-size:13px;font-weight:bold}
+#login{
+  max-width:420px;margin:9vh auto;padding:25px;
+}
+#login .logo{margin-bottom:15px}
+.search{max-width:350px;margin-bottom:13px}
+.small{font-size:12px;color:var(--muted)}
+@media(max-width:650px){
+  header{padding:12px 15px}
+  .brand h1{font-size:16px}
+  .container{margin:15px auto;padding:0 12px}
+  .panel{padding:15px}
+  .grid{grid-template-columns:1fr}
+  .full{grid-column:auto}
+  .stats{grid-template-columns:1fr 1fr}
+}
+@media print{
+  header,.tabs,.no-print,#dashboard,#login{display:none!important}
+  body{background:white}
+  #printArea{display:block!important}
+  .panel{box-shadow:none;border:0}
+}
 </style>
 </head>
 <body>
-<header><div class="brand">FRAUSTO <span>SISTEMAS</span></div><div class="sub">Control de Caja · Ingresos y egresos</div></header>
-<main>
-<div id="message"></div>
-<section id="login" class="card">
-<h2>Iniciar sesión</h2>
-<label>Correo electrónico</label><input id="email" type="email" autocomplete="username" placeholder="tu correo">
-<label>Contraseña</label><input id="password" type="password" autocomplete="current-password" placeholder="Tu contraseña">
-<button id="loginBtn" style="width:100%">Entrar</button>
-<p class="notice">Acceso privado para el administrador y el empleado de Frausto Sistemas.</p>
+
+<header>
+  <div class="brand">
+    <div class="logo">FS</div>
+    <div>
+      <h1>FRAUSTO SISTEMAS</h1>
+      <small>Recepción de Equipos</small>
+    </div>
+  </div>
+  <button class="btn secondary hidden" id="logout">Cerrar sesión</button>
+</header>
+
+<section id="login" class="panel">
+  <div class="logo">FS</div>
+  <h2>Acceso de administrador</h2>
+  <p class="small">Ingresa con tu cuenta autorizada.</p>
+  <form id="loginForm">
+    <div class="field">
+      <label>Correo electrónico</label>
+      <input id="email" type="email" required autocomplete="username">
+    </div>
+    <div class="field" style="margin-top:13px">
+      <label>Contraseña</label>
+      <input id="password" type="password" required autocomplete="current-password">
+    </div>
+    <button class="btn" style="width:100%;margin-top:18px">Iniciar sesión</button>
+  </form>
+  <div id="loginMessage"></div>
 </section>
-<section id="app" class="hidden">
-<div class="card">
-<div class="balance">SALDO NETO DEL PERÍODO</div><div class="amount" id="balance">$0.00</div>
-<div class="stats">
-<div class="stat"><small>Ingresos</small><strong class="green" id="income">$0.00</strong></div>
-<div class="stat"><small>Gastos</small><strong class="orange" id="expenses">$0.00</strong></div>
-</div>
-<p class="notice" id="period"></p>
-</div>
-<div class="card">
-<h2>Registrar movimiento</h2>
-<div class="row"><div><label>Tipo</label><select id="type"><option value="ingreso">Ingreso</option><option value="gasto">Gasto</option></select></div><div><label>Monto (MXN)</label><input id="amount" type="number" min="0.01" step="0.01" placeholder="0.00"></div></div>
-<label>Categoría</label><select id="category"></select>
-<label>Descripción</label><input id="description" maxlength="180" placeholder="Ej. Reparación de pantalla">
-<label>Forma de pago</label><select id="payment"><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option><option value="otro">Otro</option></select>
-<button id="saveBtn" style="width:100%">Guardar movimiento</button>
-</div>
-<div class="card">
-<div class="row" style="align-items:center"><h2 style="margin:0">Movimientos recientes</h2><button class="light" id="refreshBtn">Actualizar</button></div>
-<div id="history" class="notice" style="margin-top:10px">Cargando…</div>
-</div>
-<div class="row"><button class="light" id="logoutBtn">Cerrar sesión</button></div>
-</section>
-</main><footer>Frausto Sistemas · Control interno de caja</footer>
-<script type="module">
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-const SUPABASE_URL='https://sslgmtklgmountnlqrhw.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY='sb_publishable_5_Jn4e4IhVdqicHA3SpqTg_S_RfRuIL';
-const db=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
-const $=id=>document.getElementById(id);
-const money=n=>new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN'}).format(Number(n||0));
-const incomeCats=['Reparación','Venta de equipos','Accesorios','Liberación y desbloqueo','Otros ingresos'];
-const expenseCats=['Refacciones','Compra de equipos','Accesorios para venta','Renta y servicios','Otros gastos'];
-function msg(t){$('message').textContent=t;$('message').style.display='block'}
-function clearMsg(){$('message').style.display='none'}
-function setCategories(){const a=$('type').value==='ingreso'?incomeCats:expenseCats;$('category').innerHTML=a.map(x=>`<option>${x}</option>`).join('')}
-$('type').addEventListener('change',setCategories);setCategories();
-async function sessionUI(){const {data:{session}}=await db.auth.getSession();$('login').classList.toggle('hidden',!!session);$('app').classList.toggle('hidden',!session);if(session){clearMsg();await loadData()}}
-$('loginBtn').onclick=async()=>{clearMsg();const {error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)msg(error.message);else await sessionUI()};
-$('logoutBtn').onclick=async()=>{await db.auth.signOut();await sessionUI()};
-$('saveBtn').onclick=async()=>{clearMsg();const amount=Number($('amount').value);if(!(amount>0)){msg('Escribe un monto mayor que cero.');return}
-$('saveBtn').disabled=true;
-const {data:{user}}=await db.auth.getUser();
-const {error}=await db.from('fs_movements').insert({type:$('type').value,amount,category:$('category').value,description:$('description').value.trim(),payment_method:$('payment').value,created_by:user.id});
-$('saveBtn').disabled=false;if(error){msg('No se pudo guardar: '+error.message);return}
-$('amount').value='';$('description').value='';await loadData();msg('Movimiento guardado correctamente.');};
-$('refreshBtn').onclick=loadData;
-async function loadData(){const {data,error}=await db.from('fs_movements').select('id,type,amount,category,description,payment_method,created_at').order('created_at',{ascending:false}).limit(200);
-if(error){msg('No se pudieron cargar los movimientos: '+error.message);return}
-const rows=data||[];const inc=rows.filter(x=>x.type==='ingreso').reduce((s,x)=>s+Number(x.amount),0);const exp=rows.filter(x=>x.type==='gasto').reduce((s,x)=>s+Number(x.amount),0);
-$('income').textContent=money(inc);$('expenses').textContent=money(exp);$('balance').textContent=money(inc-exp);$('period').textContent='Resumen de los últimos 200 movimientos cargados.';
-$('history').innerHTML=rows.length?rows.map(x=>`<div class="item"><div><b>${x.type==='ingreso'?'Ingreso':'Gasto'} · ${escapeHtml(x.category)}</b><small>${escapeHtml(x.description||'Sin descripción')} · ${new Date(x.created_at).toLocaleString('es-MX')}</small></div><strong class="${x.type==='ingreso'?'green':'orange'}">${x.type==='ingreso'?'+':'−'}${money(x.amount)}</strong></div>`).join(''):'Todavía no hay movimientos registrados.'}
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-db.auth.onAuthStateChange(()=>setTimeout(sessionUI,0));sessionUI();
+
+<main id="app" class="container hidden">
+  <div class="notice">
+    Sistema privado de recepción y seguimiento de reparaciones.
+    Acceso exclusivo para administrador.
+  </div>
+
+  <section class="stats">
+    <div class="stat"><strong id="total">0</strong><span>Órdenes registradas</span></div>
+    <div class="stat"><strong id="pending">0</strong><span>En proceso</span></div>
+    <div class="stat"><strong id="finished">0</strong><span>Terminadas</span></div>
+  </section>
+
+  <div class="tabs" style="margin-top:20px">
+    <button class="tab active" data-tab="new">Nueva recepción</button>
+    <button class="tab" data-tab="orders">Órdenes</button>
+  </div>
+
+  <section id="new" class="panel">
+    <h2 id="formTitle">Registrar equipo</h2>
+    <form id="orderForm">
+      <input type="hidden" id="orderId">
+      <input type="hidden" id="clientId">
+
+      <h3>Datos del cliente</h3>
+      <div class="grid">
+        <div class="field">
+          <label>Nombre del cliente *</label>
+          <input id="clientName" required>
+        </div>
+        <div class="field">
+          <label>Teléfono *</label>
+          <input id="clientPhone" required>
+        </div>
+      </div>
+
+      <hr style="border:0;border-top:1px solid var(--border);margin:20px 0">
+
+      <h3>Datos del equipo</h3>
+      <div class="grid">
+        <div class="field">
+          <label>Tipo de equipo *</label>
+          <select id="deviceType" required>
+            <option value="">Seleccionar</option>
+            <option>Celular</option>
+            <option>Tablet</option>
+            <option>Computadora</option>
+            <option>Laptop</option>
+            <option>iMac</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Marca</label>
+          <input id="brand">
+        </div>
+        <div class="field">
+          <label>Modelo</label>
+          <input id="model">
+        </div>
+        <div class="field">
+          <label>IMEI / Número de serie</label>
+          <input id="serial">
+        </div>
+        <div class="field full">
+          <label>Falla reportada *</label>
+          <textarea id="issue" required></textarea>
+        </div>
+        <div class="field full">
+          <label>Accesorios que entrega</label>
+          <input id="accessories" placeholder="Cargador, funda, SIM, etc.">
+        </div>
+      </div>
+
+      <hr style="border:0;border-top:1px solid var(--border);margin:20px 0">
+
+      <h3>Diagnóstico y reparación</h3>
+      <div class="grid">
+        <div class="field full">
+          <label>Diagnóstico</label>
+          <textarea id="diagnosis"></textarea>
+        </div>
+        <div class="field">
+          <label>Estado de reparación</label>
+          <select id="status">
+            <option>Recibido</option>
+            <option>En diagnóstico</option>
+            <option>En reparación</option>
+            <option>En espera de refacción</option>
+            <option>Terminado</option>
+            <option>Entregado</option>
+            <option>Sin reparación</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Costo estimado ($)</label>
+          <input id="estimated" type="number" min="0" step="0.01" value="0">
+        </div>
+        <div class="field">
+          <label>Costo final ($)</label>
+          <input id="finalCost" type="number" min="0" step="0.01" value="0">
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" type="submit" id="saveButton">Guardar recepción</button>
+        <button class="btn secondary" type="button" id="clearButton">Limpiar</button>
+      </div>
+      <div id="message"></div>
+    </form>
+  </section>
+
+  <section id="orders" class="panel hidden">
+    <h2>Órdenes de reparación</h2>
+    <input class="search" id="search" placeholder="Buscar folio, cliente, teléfono o equipo...">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Folio</th><th>Cliente</th><th>Equipo</th>
+            <th>Estado</th><th>Fecha</th><th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="ordersBody">
+          <tr><td colspan="6">Cargando órdenes...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<section id="printArea" class="hidden"></section>
+
+<script>
+const SUPABASE_URL = "https://ihflcyhrnmoyeyqeomgu.supabase.co";
+const SUPABASE_KEY = "sb_publishable_IZFwkGLolZqvLonuEJmN0A_1IIhDUdT";
+
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let orders = [];
+let currentUser = null;
+
+const $ = id => document.getElementById(id);
+const money = value => Number(value || 0).toLocaleString("es-MX", {
+  style:"currency",currency:"MXN"
+});
+const folio = value => "FS-" + String(value).padStart(4,"0");
+
+function showMessage(text, error=false) {
+  $("message").textContent = text;
+  $("message").style.color = error ? "#d94b4b" : "#159b63";
+}
+
+function switchTab(name) {
+  document.querySelectorAll(".tab").forEach(b =>
+    b.classList.toggle("active",b.dataset.tab===name));
+  $("new").classList.toggle("hidden",name!=="new");
+  $("orders").classList.toggle("hidden",name!=="orders");
+}
+
+document.querySelectorAll(".tab").forEach(b =>
+  b.addEventListener("click",()=>switchTab(b.dataset.tab)));
+
+async function checkSession() {
+  const {data,error} = await db.auth.getSession();
+  if(error) console.error(error);
+  if(data.session) await enterApp(data.session.user);
+  else showLogin();
+}
+
+function showLogin() {
+  $("login").classList.remove("hidden");
+  $("app").classList.add("hidden");
+  $("logout").classList.add("hidden");
+}
+
+async function enterApp(user) {
+  if(user.app_metadata?.role !== "admin") {
+    await db.auth.signOut();
+    $("loginMessage").textContent =
+      "Acceso denegado. Esta cuenta no tiene permisos de administrador.";
+    showLogin();
+    return;
+  }
+  currentUser = user;
+  $("login").classList.add("hidden");
+  $("app").classList.remove("hidden");
+  $("logout").classList.remove("hidden");
+  await loadOrders();
+}
+
+$("loginForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  $("loginMessage").textContent="Verificando acceso...";
+  const {data,error} = await db.auth.signInWithPassword({
+    email:$("email").value.trim(),
+    password:$("password").value
+  });
+  if(error) {
+    $("loginMessage").textContent=error.message;
+    return;
+  }
+  await enterApp(data.user);
+});
+
+$("logout").addEventListener("click",async()=>{
+  await db.auth.signOut();
+  currentUser=null;
+  showLogin();
+});
+
+db.auth.onAuthStateChange((event,session)=>{
+  if(event==="SIGNED_OUT") showLogin();
+});
+
+async function loadOrders() {
+  $("ordersBody").innerHTML="<tr><td colspan='6'>Cargando...</td></tr>";
+  const {data,error} = await db.from("fs_repair_orders")
+    .select("*, fs_clients(name,phone)")
+    .order("folio",{ascending:false});
+
+  if(error) {
+    $("ordersBody").innerHTML=
+      "<tr><td colspan='6'>Error: "+escapeHtml(error.message)+"</td></tr>";
+    return;
+  }
+  orders=data||[];
+  renderOrders();
+  $("total").textContent=orders.length;
+  $("pending").textContent=orders.filter(o=>
+    !["Terminado","Entregado","Sin reparación"].includes(o.repair_status)).length;
+  $("finished").textContent=orders.filter(o=>
+    ["Terminado","Entregado"].includes(o.repair_status)).length;
+}
+
+function escapeHtml(value) {
+  return String(value??"").replace(/[&<>"']/g,c=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  })[c]);
+}
+
+function renderOrders() {
+  const q=$("search").value.toLowerCase();
+  const filtered=orders.filter(o=>{
+    const c=o.fs_clients||{};
+    return [
+      folio(o.folio),c.name,c.phone,o.device_type,o.brand,o.model
+    ].some(v=>String(v||"").toLowerCase().includes(q));
+  });
+  $("ordersBody").innerHTML=filtered.length ? filtered.map(o=>{
+    const c=o.fs_clients||{};
+    return `<tr>
+      <td><b>${folio(o.folio)}</b></td>
+      <td>${escapeHtml(c.name||"")}</td>
+      <td>${escapeHtml([o.device_type,o.brand,o.model].filter(Boolean).join(" "))}</td>
+      <td><span class="status">${escapeHtml(o.repair_status||"Recibido")}</span></td>
+      <td>${o.created_at?new Date(o.created_at).toLocaleDateString("es-MX"):""}</td>
+      <td>
+        <button class="btn secondary" onclick="editOrder('${o.id}')">Editar</button>
+        <button class="btn" onclick="printOrder('${o.id}')">Imprimir</button>
+      </td>
+    </tr>`;
+  }).join("") : "<tr><td colspan='6'>No hay órdenes para mostrar.</td></tr>";
+}
+$("search").addEventListener("input",renderOrders);
+
+function clearForm() {
+  $("orderForm").reset();
+  $("orderId").value="";
+  $("clientId").value="";
+  $("estimated").value="0";
+  $("finalCost").value="0";
+  $("formTitle").textContent="Registrar equipo";
+  $("saveButton").textContent="Guardar recepción";
+  showMessage("");
+}
+
+$("clearButton").addEventListener("click",clearForm);
+
+async function findOrCreateClient() {
+  const name=$("clientName").value.trim();
+  const phone=$("clientPhone").value.trim();
+
+  const {data:existing,error:findError}=await db.from("fs_clients")
+    .select("id,name,phone").eq("phone",phone).limit(1);
+
+  if(findError) throw findError;
+  if(existing?.length) {
+    const {data,error}=await db.from("fs_clients")
+      .update({name,phone}).eq("id",existing[0].id).select("id").single();
+    if(error) throw error;
+    return data.id;
+  }
+
+  const {data,error}=await db.from("fs_clients")
+    .insert({name,phone}).select("id").single();
+  if(error) throw error;
+  return data.id;
+}
+
+$("orderForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  if(!currentUser || currentUser.app_metadata?.role!=="admin") {
+    showMessage("Sesión de administrador no válida.",true);
+    return;
+  }
+
+  $("saveButton").disabled=true;
+  showMessage("Guardando información...");
+
+  try {
+    const client_id=await findOrCreateClient();
+    const payload={
+      client_id,
+      device_type:$("deviceType").value,
+      brand:$("brand").value.trim(),
+      model:$("model").value.trim(),
+      serial_number:$("serial").value.trim(),
+      reported_issue:$("issue").value.trim(),
+      accessories:$("accessories").value.trim(),
+      diagnosis:$("diagnosis").value.trim(),
+      repair_status:$("status").value,
+      estimated_cost:Number($("estimated").value||0),
+      final_cost:Number($("finalCost").value||0),
+      updated_at:new Date().toISOString()
+    };
+
+    let result;
+    if($("orderId").value) {
+      result=await db.from("fs_repair_orders")
+        .update(payload).eq("id",$("orderId").value).select("folio").single();
+    } else {
+      result=await db.from("fs_repair_orders")
+        .insert(payload).select("folio").single();
+    }
+
+    if(result.error) throw result.error;
+    const savedFolio=folio(result.data.folio);
+    showMessage("¡Guardado correctamente! Folio "+savedFolio);
+    clearForm();
+    showMessage("¡Guardado correctamente! Folio "+savedFolio);
+    await loadOrders();
+    switchTab("orders");
+  } catch(err) {
+    showMessage("No se pudo guardar: "+err.message,true);
+  } finally {
+    $("saveButton").disabled=false;
+  }
+});
+
+window.editOrder=async id=>{
+  const o=orders.find(x=>x.id===id);
+  if(!o) return;
+  const c=o.fs_clients||{};
+  $("orderId").value=o.id;
+  $("clientId").value=o.client_id;
+  $("clientName").value=c.name||"";
+  $("clientPhone").value=c.phone||"";
+  $("deviceType").value=o.device_type||"";
+  $("brand").value=o.brand||"";
+  $("model").value=o.model||"";
+  $("serial").value=o.serial_number||"";
+  $("issue").value=o.reported_issue||"";
+  $("accessories").value=o.accessories||"";
+  $("diagnosis").value=o.diagnosis||"";
+  $("status").value=o.repair_status||"Recibido";
+  $("estimated").value=o.estimated_cost??0;
+  $("finalCost").value=o.final_cost??0;
+  $("formTitle").textContent="Editar orden "+folio(o.folio);
+  $("saveButton").textContent="Guardar cambios";
+  switchTab("new");
+  window.scrollTo({top:0,behavior:"smooth"});
+};
+
+window.printOrder=id=>{
+  const o=orders.find(x=>x.id===id);
+  if(!o) return;
+  const c=o.fs_clients||{};
+  $("printArea").innerHTML=`
+    <div class="panel" style="max-width:750px;margin:20px auto">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><h1 style="color:#f28c28">FRAUSTO SISTEMAS</h1>
+        <p>Recepción y servicio técnico</p></div>
+        <h2>${folio(o.folio)}</h2>
+      </div>
+      <hr>
+      <h3>Datos del cliente</h3>
+      <p><b>Nombre:</b> ${escapeHtml(c.name)}</p>
+      <p><b>Teléfono:</b> ${escapeHtml(c.phone)}</p>
+      <h3>Equipo recibido</h3>
+      <p><b>Tipo:</b> ${escapeHtml(o.device_type)}</p>
+      <p><b>Marca:</b> ${escapeHtml(o.brand)}</p>
+      <p><b>Modelo:</b> ${escapeHtml(o.model)}</p>
+      <p><b>IMEI / Serie:</b> ${escapeHtml(o.serial_number)}</p>
+      <p><b>Falla reportada:</b> ${escapeHtml(o.reported_issue)}</p>
+      <p><b>Accesorios:</b> ${escapeHtml(o.accessories)}</p>
+      <h3>Diagnóstico y reparación</h3>
+      <p><b>Diagnóstico:</b> ${escapeHtml(o.diagnosis)}</p>
+      <p><b>Estado:</b> ${escapeHtml(o.repair_status)}</p>
+      <p><b>Costo estimado:</b> ${money(o.estimated_cost)}</p>
+      <p><b>Costo final:</b> ${money(o.final_cost)}</p>
+      <p><b>Fecha:</b> ${o.created_at?new Date(o.created_at).toLocaleString("es-MX"):""}</p>
+      <br><br>
+      <div style="display:flex;justify-content:space-around;text-align:center">
+        <div>____________________<br>Firma del cliente</div>
+        <div>____________________<br>Frausto Sistemas</div>
+      </div>
+      <p style="text-align:center;margin-top:35px;font-size:12px">
+        Gracias por confiar en Frausto Sistemas.
+      </p>
+    </div>`;
+  window.print();
+};
+
+checkSession();
 </script>
-</body></html>
+</body>
+</html>
