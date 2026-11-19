@@ -230,7 +230,7 @@ tr:hover td{background:#fffaf5}
       <div class="grid">
         <div class="field full">
           <label>Diagnóstico</label>
-          <textarea id="diagnosis"></textarea>
+          <textarea id="diagnostic"></textarea>
         </div>
         <div class="field">
           <label>Estado de reparación</label>
@@ -469,7 +469,7 @@ $("orderForm").addEventListener("submit",async e=>{
       serial_number:$("serial").value.trim(),
       reported_issue:$("issue").value.trim(),
       accessories:$("accessories").value.trim(),
-      diagnosis:$("diagnosis").value.trim(),
+      diagnostic:$("diagnostic").value.trim(),
       repair_status:$("status").value,
       estimated_cost:Number($("estimated").value||0),
       final_cost:Number($("finalCost").value||0),
@@ -513,7 +513,7 @@ window.editOrder=async id=>{
   $("serial").value=o.serial_number||"";
   $("issue").value=o.reported_issue||"";
   $("accessories").value=o.accessories||"";
-  $("diagnosis").value=o.diagnosis||"";
+  $("diagnostic").value=o.diagnostic||"";
   $("status").value=o.repair_status||"Recibido";
   $("estimated").value=o.estimated_cost??0;
   $("finalCost").value=o.final_cost??0;
@@ -546,7 +546,7 @@ window.printOrder=id=>{
       <p><b>Falla reportada:</b> ${escapeHtml(o.reported_issue)}</p>
       <p><b>Accesorios:</b> ${escapeHtml(o.accessories)}</p>
       <h3>Diagnóstico y reparación</h3>
-      <p><b>Diagnóstico:</b> ${escapeHtml(o.diagnosis)}</p>
+      <p><b>Diagnóstico:</b> ${escapeHtml(o.diagnostic)}</p>
       <p><b>Estado:</b> ${escapeHtml(o.repair_status)}</p>
       <p><b>Costo estimado:</b> ${money(o.estimated_cost)}</p>
       <p><b>Costo final:</b> ${money(o.final_cost)}</p>
